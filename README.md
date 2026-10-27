@@ -1,5 +1,6 @@
 # projek-akhir
 projek akhir membuat aplikasi flowstate dengan python
+
 projek ini berguna untuk membuat kita jika ingin fokus mengerjakan suatu tugas tanpa ingin adanya hambatan dengan distraksi dan gangguan di sekitar kita.
 
 # fitur fitur yang ingin aku hadirkan
