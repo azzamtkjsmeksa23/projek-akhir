@@ -9,6 +9,7 @@ class FlowstateApp(ctk.CTk):
         self.title("FLOWSTATE !")
         self.geometry("900x600")
         self.minsize(700, 500)
+        self.tasks = []
 
         self.title_label = ctk.CTkLabel(
             self,
@@ -47,6 +48,25 @@ class FlowstateApp(ctk.CTk):
 
     def add_task(self, event=None):
         text = self.task_entry.get().strip()
+        if text == "":
+            return
+
+        self.tasks.append(text)
+        self.task_entry.delete(0, "end")
+        self.refresh_task_list()
+
+    def refresh_task_list(self):
+        for widget in self.task_list_frame.winfo_children():
+            widget.destroy()
+
+        for number, task in enumerate(self.tasks, start=1):
+            label = ctk.CTkLabel(
+                self.task_list_frame,
+                text=f"{number}. {task}",
+                anchor="w",
+                font=ctk.CTkFont(size=16),
+            )
+            label.pack(fill="x", padx=10, pady=4)
 
 if __name__ == "__main__":
     app = FlowstateApp()
