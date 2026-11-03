@@ -13,7 +13,7 @@ class FlowstateApp(ctk.CTk):
         self.title_label = ctk.CTkLabel(
             self,
             text="Flowstate",
-            font=ctk.CTkFont(size=32, weight="Bold"),
+            font=ctk.CTkFont(size=32, weight="bold"),
         )
         self.title_label.pack(pady=40)
 
