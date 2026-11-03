@@ -36,6 +36,14 @@ class FlowstateApp(ctk.CTk):
         )
         self.task_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.task_entry.bind("<Return>", self.add_task)
+
+        self.progress_label = ctk.CTkLabel(
+            self,
+            text="0 / 0 done",
+            font=ctk.CTkFont(size=14),
+        )
+        self.progress_label.pack(anchor="w", padx=34)
+
         self.task_list_frame = ctk.CTkScrollableFrame(self,label_text="tugas hari ini.")
         self.task_list_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
 
