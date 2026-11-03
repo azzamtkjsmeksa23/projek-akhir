@@ -20,7 +20,7 @@ class FlowstateApp(ctk.CTk):
         self.subtitle_label = ctk.CTkLabel(
             self,
             text="Stay Focused. Finish what matters.",
-            font=ctk.CTkLabel(size=16),
+            font=ctk.CTkFont(size=16),
         )
         self.subtitle_label.pack()
 
