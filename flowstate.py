@@ -1,4 +1,5 @@
 import sys
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QListWidget, QListWidgetItem,
 )
@@ -14,7 +15,7 @@ class FlowstateWindow(QMainWindow):
         row = QHBoxLayout()
 
         self.task_input = QLineEdit()
-        self.task_input.setPlaceHolderText("What u want to do?")
+        self.task_input.setPlaceholderText("What u want to do?")
         self.task_input.returnPressed.connect(self.add_task)
 
         self.add_button = QPushButton("AddTask")
