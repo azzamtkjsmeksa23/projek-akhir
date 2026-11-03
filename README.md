@@ -12,3 +12,4 @@ projek ini berguna untuk membuat kita jika ingin fokus mengerjakan suatu tugas t
   6. ada fitur menambahkan tugas apa yang ingin dikerjakan 
   7. jika satu saja tugas belum selesai akan ada sanksi
   8. jadi harus ada minimal 1 tugas terselesaikan.
+  9. tambahan nanti tidak bisa mengakses yang menyebabkan distraksi
