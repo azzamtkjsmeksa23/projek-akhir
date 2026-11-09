@@ -11,9 +11,11 @@ def tambah_tugas():
     tugas_input.delete(0, "end")
     update_tugas_list()
 
+
 def cek_tugas(urutan, box):
     tugas[urutan]["done"] = bool(box.get())
     update_penghitung()
+
 
 def update_tugas_list():
     for widget in tugas_frame.winfo_children():
@@ -26,9 +28,11 @@ def update_tugas_list():
         box.pack(fill="x", padx=10, pady=5)
     update_penghitung()
 
+
 def update_penghitung():
-    selesai = sum(1, for t in tugas if t["done"])
+    selesai = sum(1 for t in tugas if t["done"])
     penghitung.configure(text=f"Selesai: {selesai} / {len(tugas)}")
+
 
 app = ctk.CTk()
 app.title("FLOWSTATE")
