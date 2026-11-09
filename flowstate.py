@@ -7,7 +7,7 @@ def tambah_tugas():
     text = tugas_input.get().strip()
     if text == "":
         return
-    tugas.append(text)
+    tugas.append({"text": text, "done": False})
     tugas_input.delete(0, "end")
     update_tugas_list()
 
