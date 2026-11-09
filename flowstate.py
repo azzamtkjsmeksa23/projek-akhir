@@ -1,6 +1,8 @@
 import customtkinter as ctk
 
 tugas = []
+waktu_tersisa = 0
+waktu_berjalan = False
 
 
 def tambah_tugas():
@@ -32,6 +34,46 @@ def update_tugas_list():
 def update_penghitung():
     selesai = sum(1 for t in tugas if t["done"])
     penghitung.configure(text=f"Selesai: {selesai} / {len(tugas)}")
+
+
+def format_waktu(total_detiks):
+    menits = total_detiks // 60
+    detiks = total_detiks % 60
+    return f"{menits:02d}:{detiks:02d}"
+
+
+def mulai_waktu():
+    global waktu_tersisa, waktu_berjalan
+    try:
+        menits = int(durasi_masuk.get())
+    except ValueError:
+        waktu_label.configure(text="Masukkan semua angka")
+        return
+    if menits <= 0:
+        waktu_label.configure(text="Waktu minimal 1")
+        return
+    waktu_tersisa = menits * 60
+    waktu_berjalan = True
+    tombol_start.configure(state="disable")
+    durasi_masuk.configure(state="disable")
+    tick()
+
+
+def tick():
+    global waktu_tersisa
+    if not waktu_berjalan:
+        return
+    waktu_label.configure(text=format_waktu(waktu_tersisa))
+    if waktu_tersisa <= 0:
+        finish_waktu()
+        return
+    waktu_tersisa -= 1
+    app.after(1000, tick)
+
+
+def finish_waktu():
+    global waktu_berjalan
+    waktu_berjalan = False
 
 
 app = ctk.CTk()
