@@ -52,6 +52,6 @@ tombol_tambah = ctk.CTkButton(
 tombol_tambah.pack(side="right")
 tugas_frame = ctk.CTkScrollableFrame(app, label_text="Tugas Hari ini : ")
 tugas_frame.pack(fill="both", expand=True, padx=20, pady=20)
-penghitung = ctk.CTkLabel(app, text="SELESAI: 0 / 0", font=("Arial, 16"))
+penghitung = ctk.CTkLabel(app, text="SELESAI: 0 / 0", font=("Arial", 16))
 penghitung.pack(pady=(0, 20))
 app.mainloop()
