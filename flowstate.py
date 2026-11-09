@@ -11,14 +11,24 @@ def tambah_tugas():
     tugas_input.delete(0, "end")
     update_tugas_list()
 
+def cek_tugas(urutan, box):
+    tugas[urutan]["done"] = bool(box.get())
+    update_penghitung()
 
 def update_tugas_list():
     for widget in tugas_frame.winfo_children():
         widget.destroy()
-    for tugs in tugas:
-        label = ctk.CTkLabel(tugas_frame, text="- " + tugs, anchor="w")
-        label.pack(fill="x", padx=10, pady=3)
+    for urutan, tugs in enumerate(tugas):
+        box = ctk.CTkCheckBox(tugas_frame, text=tugs["text"])
+        box.configure(command=lambda u=urutan, b=box: cek_tugas(u, b))
+        if tugs["done"]:
+            box.select()
+        box.pack(fill="x", padx=10, pady=5)
+    update_penghitung()
 
+def update_penghitung():
+    selesai = sum(1, for t in tugas if t["done"])
+    penghitung.configure(text=f"Selesai: {selesai} / {len(tugas)}")
 
 app = ctk.CTk()
 app.title("FLOWSTATE")
@@ -38,4 +48,6 @@ tombol_tambah = ctk.CTkButton(
 tombol_tambah.pack(side="right")
 tugas_frame = ctk.CTkScrollableFrame(app, label_text="Tugas Hari ini : ")
 tugas_frame.pack(fill="both", expand=True, padx=20, pady=20)
+penghitung = ctk.CTkLabel(app, text="SELESAI: 0 / 0", font=("Arial, 16"))
+penghitung.pack(pady=(0, 20))
 app.mainloop()
