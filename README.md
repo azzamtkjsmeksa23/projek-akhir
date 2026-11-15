@@ -14,6 +14,7 @@ projek ini berguna untuk membuat kita jika ingin fokus mengerjakan suatu tugas t
   8. jadi harus ada minimal 1 tugas terselesaikan.
   9. tambahan nanti tidak bisa mengakses yang menyebabkan distraksi
   10. bisa custom block aplikasi dan website yang menurut pengguna mengganggu dan menyebabkan distraksi
+  11. tambahan waktu istirahat jika terlalu lama screen time
 
 
 # How to use this thing:
