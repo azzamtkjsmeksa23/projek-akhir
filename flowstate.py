@@ -1,5 +1,8 @@
 import customtkinter as ctk
 
+ctk.set_appearance_mode("dark")
+
+INTERVAL_PENGINGAT = 10
 tugas = []
 waktu_tersisa = 0
 waktu_berjalan = False
@@ -73,8 +76,27 @@ def atur_mode(sesi):
     tombol_start.configure(text="Fokus !. . ." if sesi else "Mulai")
 
 
+def tampil_pengingat():
+    sisa = sum(1 for t in tugas if not t["done"])
+    app.bell()
+
+    popup = ctk.CTkToplevel(app)
+    popup.overrideredirect(True)
+    popup.attributes("-topmost", True)
+
+    lebar, tinggi = 300, 90
+    x = app.winfo_screenwidth() - lebar - 20
+    popup.geometry(f"{lebar}x{tinggi}+{x}+20")
+
+    ctk.CTkLabel(popup, text="Tetap fokus!", font=("Arial", 18, "bold")).pack(
+        pady=(15, 2)
+    )
+    ctk.CTkLabel(popup, text=f"Tugas tersisa: {sisa}").pack()
+    popup.after(4000, popup.destroy())
+
+
 def mulai_waktu():
-    global waktu_tersisa, waktu_berjalan
+    global waktu_tersisa, waktu_berjalan, waktu_total
     if waktu_berjalan:
         return
 
@@ -84,11 +106,14 @@ def mulai_waktu():
 
     total = durasi_terjemah(durasi_masuk.get())
     if total is None:
-        waktu_label.configure(text="use MM:SS", font=("Arial", 28, "bold"))
+        waktu_label.configure(
+            text="format waktu mu salah harusnya ini MM:SS", font=("Arial", 28, "bold")
+        )
         return
 
     status_label.configure(text="")
     waktu_tersisa = total
+    waktu_total = total
     waktu_berjalan = True
     atur_mode(True)
     tick()
@@ -102,6 +127,11 @@ def tick():
     if waktu_tersisa <= 0:
         finish_waktu()
         return
+
+    berlalu = waktu_total - waktu_tersisa
+    if berlalu > 0 and berlalu % INTERVAL_PENGINGAT == 0:
+        tampil_pengingat()
+
     waktu_tersisa -= 1
     app.after(1000, tick)
 
