@@ -295,4 +295,13 @@ tugas_frame.pack(fill="both", expand=True, padx=20, pady=20)
 penghitung = ctk.CTkLabel(app, text="SELESAI: 0 / 0", font=("Arial", 16))
 penghitung.pack(pady=(0, 20))
 
+tombol_darurat = ctk.CTkButton(
+    app,
+    text="DARURAT: STOP",
+    fg_color="#b00020",
+    hover_color="#800018",
+    command=berhenti_darurat,
+)
+tombol_darurat.pack(pady=(0, 20))
+
 app.mainloop()
