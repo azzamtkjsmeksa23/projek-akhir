@@ -1,10 +1,13 @@
 import customtkinter as ctk
+import subprocess
+import shutil
 
 ctk.set_appearance_mode("dark")
 
 INTERVAL_PENGINGAT = 10
 tugas = []
 waktu_tersisa = 0
+waktu_total = 0
 waktu_berjalan = False
 
 
@@ -78,7 +81,7 @@ def atur_mode(sesi):
 
 def tampil_pengingat():
     sisa = sum(1 for t in tugas if not t["done"])
-    app.bell()
+    suara()
 
     popup = ctk.CTkToplevel(app)
     popup.overrideredirect(True)
@@ -92,7 +95,7 @@ def tampil_pengingat():
         pady=(15, 2)
     )
     ctk.CTkLabel(popup, text=f"Tugas tersisa: {sisa}").pack()
-    popup.after(4000, popup.destroy())
+    popup.after(4000, popup.destroy)
 
 
 def mulai_waktu():
@@ -129,11 +132,11 @@ def tick():
         return
 
     berlalu = waktu_total - waktu_tersisa
-    if berlalu > 0 and berlalu % INTERVAL_PENGINGAT == 0:
-        tampil_pengingat()
-
     waktu_tersisa -= 1
     app.after(1000, tick)
+
+    if berlalu > 0 and berlalu % INTERVAL_PENGINGAT == 0:
+        tampil_pengingat()
 
 
 def finish_waktu():
@@ -143,6 +146,15 @@ def finish_waktu():
     selesai = sum(1 for t in tugas if t["done"])
     waktu_label.configure(text="Waktu Abis!!")
     status_label.configure(text=f"Sesi selesai: {selesai} / {len(tugas)} tugas")
+
+
+def suara():
+    file_suara = "/usr/share/sounds/freedesktop/stereo/message.oga"
+    for pemutar in ("pw-play", "paplay"):
+        if shutil.which(pemutar):
+            subprocess.Popen([pemutar, file_suara])
+            return
+    app.bell()
 
 
 app = ctk.CTk()
