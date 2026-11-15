@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import sys
 import subprocess
 import shutil
 
@@ -149,12 +150,19 @@ def finish_waktu():
 
 
 def suara():
-    file_suara = "/usr/share/sounds/freedesktop/stereo/message.oga"
-    for pemutar in ("pw-play", "paplay"):
-        if shutil.which(pemutar):
-            subprocess.Popen([pemutar, file_suara])
-            return
-    app.bell()
+    if sys.platform.startswith("win"):
+        import windsound
+
+        windsound.MessageBeep()
+    elif sys.platform.startswith("linux"):
+        file_suara = "/usr/share/sounds/freedesktop/stereo/message.oga"
+        for pemutar in ("pw-play", "paplay"):
+            if shutil.which(pemutar):
+                subprocess.Popen([pemutar, file_suara])
+                return
+        app.bell()
+    else:
+        app.bell()
 
 
 app = ctk.CTk()
