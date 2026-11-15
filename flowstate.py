@@ -184,9 +184,7 @@ def mulai_waktu():
 
     total = durasi_terjemah(durasi_masuk.get())
     if total is None:
-        waktu_label.configure(
-            text="format waktu mu salah harusnya ini MM:SS", font=("Arial", 28, "bold")
-        )
+        status_label.configure(text="Format waktu salah. Pake MM:SS")
         return
 
     status_label.configure(text="")
@@ -214,7 +212,7 @@ def tick():
         tampil_pengingat()
 
 
-def evaluasi_sesi(darurat=True):
+def evaluasi_sesi(darurat=False):
     selesai = sum(1 for t in tugas if t["done"])
     total = len(tugas)
     penalti = False
@@ -222,7 +220,7 @@ def evaluasi_sesi(darurat=True):
     if darurat:
         if PENALTI_SAAT_DARURAT:
             statistik["gagal"] += 1
-            statistik["streak"] += 0
+            statistik["streak"] = 0
             penalti = True
             pesan = f"Sesi dihentikan. Penalti {DURASI_PENALTI} detik"
         else:
@@ -233,9 +231,9 @@ def evaluasi_sesi(darurat=True):
         pesan = f"Berhasil! {selesai} / {total} tugas selesai!"
     else:
         statistik["gagal"] += 1
-        statistik["streak"] += 0
+        statistik["streak"] = 0
         penalti = True
-        pesan(f"Gagal: {selesai} / {total} tugas.Penalti {DURASI_PENALTI} detik.")
+        pesan = f"Gagal: {selesai} / {total} tugas.Penalti {DURASI_PENALTI} detik."
 
     tugas[:] = [t for t in tugas if not t["done"]]
     update_tugas_list()
@@ -257,9 +255,9 @@ def finish_waktu():
 
 def suara():
     if sys.platform.startswith("win"):
-        import windsound
+        import winsound
 
-        windsound.MessageBeep()
+        winsound.MessageBeep()
     elif sys.platform.startswith("linux"):
         file_suara = "/usr/share/sounds/freedesktop/stereo/message.oga"
         for pemutar in ("pw-play", "paplay"):
@@ -340,7 +338,7 @@ def berhenti_darurat():
     ).pack(side="left", padx=8)
 
     def cek_dialog():
-        if not dialog.winfo_exist():
+        if not dialog.winfo_exists():
             return
         if not waktu_berjalan:
             dialog.destroy()
@@ -399,7 +397,7 @@ tugas_frame.pack(fill="both", expand=True, padx=20, pady=20)
 penghitung = ctk.CTkLabel(app, text="SELESAI: 0 / 0", font=("Arial", 16))
 penghitung.pack(pady=(0, 5))
 
-statistik_label = ctk.CTkLable(app, text="", text_color="gray70")
+statistik_label = ctk.CTkLabel(app, text="", text_color="gray70")
 statistik_label.pack(pady=(0, 10))
 
 tombol_darurat = ctk.CTkButton(
