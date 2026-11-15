@@ -224,7 +224,7 @@ def berhenti_darurat():
         text="Hentikan Sesi",
         fg_color="#2e7d32",
         hover_color="#1b5e20",
-        comand=real_berhenti,
+        command=real_berhenti,
     ).pack(side="left", padx=8)
 
     ctk.CTkButton(
