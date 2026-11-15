@@ -6,6 +6,8 @@ waktu_berjalan = False
 
 
 def tambah_tugas():
+    if waktu_berjalan:
+        return
     text = tugas_input.get().strip()
     if text == "":
         return
@@ -63,9 +65,21 @@ def durasi_terjemah(text):
     return total
 
 
+def atur_mode(sesi):
+    status = "disabled" if sesi else "normal"
+    tugas_input.configure(state=status)
+    tombol_tambah.configure(state=status)
+    durasi_masuk.configure(state=status)
+    tombol_start.configure(text="Fokus !. . ." if sesi else "Mulai")
+
+
 def mulai_waktu():
     global waktu_tersisa, waktu_berjalan
     if waktu_berjalan:
+        return
+
+    if len(tugas) == 0:
+        status_label.configure(text="Tambah minimal 1 tugas kids")
         return
 
     total = durasi_terjemah(durasi_masuk.get())
@@ -73,10 +87,10 @@ def mulai_waktu():
         waktu_label.configure(text="use MM:SS", font=("Arial", 28, "bold"))
         return
 
+    status_label.configure(text="")
     waktu_tersisa = total
     waktu_berjalan = True
-    waktu_label.configure(font=("Arial", 36, "bold"))
-    tombol_start.configure(text="Fokus !. . .")
+    atur_mode(True)
     tick()
 
 
@@ -95,42 +109,59 @@ def tick():
 def finish_waktu():
     global waktu_berjalan
     waktu_berjalan = False
+    atur_mode(False)
+    selesai = sum(1 for t in tugas if t["done"])
     waktu_label.configure(text="Waktu Abis!!")
-    tombol_start.configure(text="Mulai")
-    durasi_masuk.configure(state="normal")
+    status_label.configure(text=f"Sesi selesai: {selesai} / {len(tugas)} tugas")
 
 
 app = ctk.CTk()
 app.title("FLOWSTATE")
 app.geometry("500x600")
+
 title = ctk.CTkLabel(app, text="Flowstate", font=("Arial", 28, "bold"))
 title.pack(pady=(20, 10))
+
 waktu_label = ctk.CTkLabel(app, text="25:00", font=("Arial", 36, "bold"))
 waktu_label.pack(pady=(10, 10))
+
 waktu_controls = ctk.CTkFrame(app, fg_color="transparent")
 waktu_controls.pack(pady=(0, 20))
+
 durasi_label = ctk.CTkLabel(waktu_controls, text="Waktu (MM:SS):")
 durasi_label.pack(side="left", padx=(0, 8))
+
 durasi_masuk = ctk.CTkEntry(waktu_controls, width=60, justify="center")
 durasi_masuk.insert(0, "25:00")
 durasi_masuk.pack(side="left", padx=(0, 15))
+
 tombol_start = ctk.CTkButton(
     waktu_controls, text="Mulai", width=100, command=mulai_waktu
 )
 tombol_start.pack(side="left")
+
+status_label = ctk.CTkLabel(app, text="", text_color="orange")
+status_label.pack(pady=(0, 10))
+
 subtitle = ctk.CTkLabel(app, text="tambah tugas untuk hari ini")
 subtitle.pack(pady=(20, 10))
+
 frame_input = ctk.CTkFrame(app, fg_color="transparent")
 frame_input.pack(fill="x", padx=20)
+
 tugas_input = ctk.CTkEntry(frame_input, placeholder_text="Tulis tugas")
 tugas_input.pack(side="left", fill="x", expand=True, padx=(0, 10))
 tugas_input.bind("<Return>", lambda event: tambah_tugas())
+
 tombol_tambah = ctk.CTkButton(
     frame_input, text="TAMBAH", width=100, command=tambah_tugas
 )
 tombol_tambah.pack(side="right")
+
 tugas_frame = ctk.CTkScrollableFrame(app, label_text="Tugas Hari ini : ")
 tugas_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
 penghitung = ctk.CTkLabel(app, text="SELESAI: 0 / 0", font=("Arial", 16))
 penghitung.pack(pady=(0, 20))
+
 app.mainloop()
