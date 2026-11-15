@@ -49,7 +49,7 @@ def durasi_terjemah(text):
             menits_text, detiks_text = text.split(":")
             menits = int(menits_text)
             detiks = int(detiks_text)
-            if not 0 <= seconds < 60:
+            if not 0 <= detiks < 60:
                 return None
         else:
             menits = int(text)
@@ -96,7 +96,7 @@ def finish_waktu():
     global waktu_berjalan
     waktu_berjalan = False
     waktu_label.configure(text="Waktu Abis!!")
-    tombol_start.configure(text="normal")
+    tombol_start.configure(text="Mulai")
     durasi_masuk.configure(state="normal")
 
 
@@ -105,14 +105,14 @@ app.title("FLOWSTATE")
 app.geometry("500x600")
 title = ctk.CTkLabel(app, text="Flowstate", font=("Arial", 28, "bold"))
 title.pack(pady=(20, 10))
-waktu_label = ctk.CTkLabel(app, text="25:00", font=("Arial", 56, "bold"))
+waktu_label = ctk.CTkLabel(app, text="25:00", font=("Arial", 36, "bold"))
 waktu_label.pack(pady=(10, 10))
 waktu_controls = ctk.CTkFrame(app, fg_color="transparent")
 waktu_controls.pack(pady=(0, 20))
-durasi_label = ctk.CTkLabel(waktu_controls, text="Menit:")
+durasi_label = ctk.CTkLabel(waktu_controls, text="Waktu (MM:SS):")
 durasi_label.pack(side="left", padx=(0, 8))
 durasi_masuk = ctk.CTkEntry(waktu_controls, width=60, justify="center")
-durasi_masuk.insert(0, "25")
+durasi_masuk.insert(0, "25:00")
 durasi_masuk.pack(side="left", padx=(0, 15))
 tombol_start = ctk.CTkButton(
     waktu_controls, text="Mulai", width=100, command=mulai_waktu
