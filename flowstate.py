@@ -10,6 +10,7 @@ tugas = []
 waktu_tersisa = 0
 waktu_total = 0
 waktu_berjalan = False
+tick_id = None
 
 
 def tambah_tugas():
@@ -124,7 +125,7 @@ def mulai_waktu():
 
 
 def tick():
-    global waktu_tersisa
+    global waktu_tersisa, tick_id
     if not waktu_berjalan:
         return
     waktu_label.configure(text=format_waktu(waktu_tersisa))
@@ -134,7 +135,7 @@ def tick():
 
     berlalu = waktu_total - waktu_tersisa
     waktu_tersisa -= 1
-    app.after(1000, tick)
+    tick_id = app.after(1000, tick)
 
     if berlalu > 0 and berlalu % INTERVAL_PENGINGAT == 0:
         tampil_pengingat()
@@ -163,6 +164,86 @@ def suara():
         app.bell()
     else:
         app.bell()
+
+
+def hentikan_sesi():
+    global waktu_berjalan
+    if not waktu_berjalan:
+        return
+    waktu_berjalan = False
+    if tick_id is not None:
+        app.after_cancel(tick_id)
+    atur_mode(False)
+    waktu_label.configure(text="Sesi dihentikan")
+    status_label.configure(text="Sesi dihentikan lewat tombol darurat.")
+
+
+def berhenti_darurat():
+    if not waktu_berjalan:
+        return
+
+    dialog = ctk.CTkToplevel(app)
+    dialog.title("WOI NGAPAIN")
+    dialog.geometry("400x300")
+    dialog.attributes("-topmost", True)
+    dialog.transient(app)
+    dialog.after(150, dialog.grab_set)
+
+    ctk.CTkLabel(
+        dialog, text="PERINGATAN", font=("Arial", 22, "bold"), text_color="red"
+    ).pack(pady=(20, 10))
+
+    ctk.CTkLabel(
+        dialog,
+        text=(
+            "TOMBOL INI HANYA UNTUK DARURAT\n"
+            "MENYERAH KAH??\n\n"
+            "KETIK STOP UNTUK BERHENTI BERKEMBANG"
+        ),
+        justify="center",
+    ).pack(pady=(0, 10), padx=20)
+
+    konfirmasi = ctk.CTkEntry(dialog, justify="center", placeholder_text="STOP")
+    konfirmasi.pack(pady=5)
+
+    pesan = ctk.CTkLabel(dialog, text="", text_colo="orange")
+    pesan.pack()
+
+    def real_berhenti():
+        if konfirmasi.get().strip().upper() != "STOP":
+            pesan.configure(text="KETIK STOP DENGAN BENAR DEKS")
+            return
+        dialog.destroy()
+        hentikan_sesi()
+
+    tombol_row = ctk.CTkFrame(dialog, fg_color="transparent")
+    tombol_row.pack(pady=15)
+
+    ctk.CTkButton(
+        tombol_row,
+        text="Hentikan Sesi",
+        fg_color="#2e7d32",
+        hover_color="#1b5e20",
+        comand=real_berhenti,
+    ).pack(side="left", padx=8)
+
+    ctk.CTkButton(
+        tombol_row,
+        text="Lanjut FOKUS",
+        fg_color="#b00020",
+        hover_color="#800018",
+        command=dialog.destroy,
+    ).pack(side="left", padx=8)
+
+    def cek_dialog():
+        if not dialog.winfo_exist():
+            return
+        if not waktu_berjalan:
+            dialog.destroy()
+            return
+        dialog.after(500, cek_dialog)
+
+    cek_dialog()
 
 
 app = ctk.CTk()
