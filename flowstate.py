@@ -1,16 +1,85 @@
-import customtkinter as ctk
+import json
+import math
+import os
+import time
 import sys
 import subprocess
 import shutil
 
+import customtkinter as ctk
+
 ctk.set_appearance_mode("dark")
 
+# rules
 INTERVAL_PENGINGAT = 10
+MINIMUM_TUGAS = 1
+DURASI_PENALTI = 15
+PENALTI_SAAT_DARURAT = True
+FILE_STAT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "statistik.json")
+
+# data
 tugas = []
 waktu_tersisa = 0
 waktu_total = 0
 waktu_berjalan = False
 tick_id = None
+penalti_id = None
+
+
+def load_statistik():
+    standar = {"berhasil": 0, "gagal": 0, "streak": 0, "penalti_sampai": 0}
+    try:
+        with open(FILE_STAT, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for kunci in standar:
+            if kunci in data:
+                standar[kunci] = data[kunci]
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        pass
+    return standar
+
+
+def simpan_statistik():
+    try:
+        with open(FILE_STAT, "w", encoding="utf-8") as f:
+            json.dump(statistik, f)
+    except OSError:
+        pass
+
+
+statistik = load_statistik()
+
+
+def update_statistik_label():
+    statistik_label.configure(
+        text=(
+            f"Berhasil: {statistik['berhasil']} "
+            f"Gagal: {statistik['gagal']} "
+            f"Streak: {statistik['streak']}"
+        )
+    )
+
+
+def penalti_aktif():
+    return time.time() < statistik["penalti_sampai"]
+
+
+def mulai_penalti():
+    statistik["penalti_sampai"] = time.time() + DURASI_PENALTI
+    simpan_statistik()
+    hitung_penalti()
+
+
+def hitung_penalti():
+    global penalti_id
+    sisa = math.ceil(statisstik["penalti_sampai"] - time.time())
+    if sisa <= 0:
+        penalti_id = None
+        tombol_start.configure(text="Mulai")
+        status_label.configure(text="Penalti selesai. Siap fokus lagi.")
+        return
+    tombol_start.configure(text=f"Penalti {format_waktu(sisa)}")
+    penalti_id = app.after(500, hitung_penalti)
 
 
 def tambah_tugas():
@@ -248,7 +317,7 @@ def berhenti_darurat():
 
 app = ctk.CTk()
 app.title("FLOWSTATE")
-app.geometry("500x600")
+app.geometry("500x720")
 
 title = ctk.CTkLabel(app, text="Flowstate", font=("Arial", 28, "bold"))
 title.pack(pady=(20, 10))
@@ -267,7 +336,7 @@ durasi_masuk.insert(0, "25:00")
 durasi_masuk.pack(side="left", padx=(0, 15))
 
 tombol_start = ctk.CTkButton(
-    waktu_controls, text="Mulai", width=100, command=mulai_waktu
+    waktu_controls, text="Mulai", width=130, command=mulai_waktu
 )
 tombol_start.pack(side="left")
 
@@ -293,7 +362,10 @@ tugas_frame = ctk.CTkScrollableFrame(app, label_text="Tugas Hari ini : ")
 tugas_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
 penghitung = ctk.CTkLabel(app, text="SELESAI: 0 / 0", font=("Arial", 16))
-penghitung.pack(pady=(0, 20))
+penghitung.pack(pady=(0, 5))
+
+statistik_label = ctk.CTkLable(app, text="", text_color="gray70")
+statistik_label.pack(pady=(0, 10))
 
 tombol_darurat = ctk.CTkButton(
     app,
@@ -304,4 +376,7 @@ tombol_darurat = ctk.CTkButton(
 )
 tombol_darurat.pack(pady=(0, 20))
 
+update_statistik_label()
+if penalti_aktif():
+    hitung_penalti()
 app.mainloop()
