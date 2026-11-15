@@ -206,7 +206,7 @@ def berhenti_darurat():
     konfirmasi = ctk.CTkEntry(dialog, justify="center", placeholder_text="STOP")
     konfirmasi.pack(pady=5)
 
-    pesan = ctk.CTkLabel(dialog, text="", text_colo="orange")
+    pesan = ctk.CTkLabel(dialog, text="", text_color="orange")
     pesan.pack()
 
     def real_berhenti():
