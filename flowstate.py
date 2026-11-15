@@ -72,7 +72,7 @@ def mulai_penalti():
 
 def hitung_penalti():
     global penalti_id
-    sisa = math.ceil(statisstik["penalti_sampai"] - time.time())
+    sisa = math.ceil(statistik["penalti_sampai"] - time.time())
     if sisa <= 0:
         penalti_id = None
         tombol_start.configure(text="Mulai")
@@ -174,6 +174,10 @@ def mulai_waktu():
     if waktu_berjalan:
         return
 
+    if penalti_aktif():
+        status_label.configure(text="Masih dalam penalti. Tunggu sampai habis.")
+        return
+
     if len(tugas) == 0:
         status_label.configure(text="Tambah minimal 1 tugas kids")
         return
@@ -210,13 +214,45 @@ def tick():
         tampil_pengingat()
 
 
+def evaluasi_sesi(darurat=True):
+    selesai = sum(1 for t in tugas if t["done"])
+    total = len(tugas)
+    penalti = False
+
+    if darurat:
+        if PENALTI_SAAT_DARURAT:
+            statistik["gagal"] += 1
+            statistik["streak"] += 0
+            penalti = True
+            pesan = f"Sesi dihentikan. Penalti {DURASI_PENALTI} detik"
+        else:
+            pesan = "Sesi dihentikan. Tidak ada Penalti"
+    elif selesai >= MINIMUM_TUGAS:
+        statistik["berhasil"] += 1
+        statistik["streak"] += 1
+        pesan = f"Berhasil! {selesai} / {total} tugas selesai!"
+    else:
+        statistik["gagal"] += 1
+        statistik["streak"] += 0
+        penalti = True
+        pesan(f"Gagal: {selesai} / {total} tugas.Penalti {DURASI_PENALTI} detik.")
+
+    tugas[:] = [t for t in tugas if not t["done"]]
+    update_tugas_list()
+
+    simpan_statistik()
+    update_statistik_label()
+    status_label.configure(text=pesan)
+    if penalti:
+        mulai_penalti()
+
+
 def finish_waktu():
     global waktu_berjalan
     waktu_berjalan = False
     atur_mode(False)
-    selesai = sum(1 for t in tugas if t["done"])
     waktu_label.configure(text="Waktu Abis!!")
-    status_label.configure(text=f"Sesi selesai: {selesai} / {len(tugas)} tugas")
+    evaluasi_sesi()
 
 
 def suara():
@@ -244,7 +280,7 @@ def hentikan_sesi():
         app.after_cancel(tick_id)
     atur_mode(False)
     waktu_label.configure(text="Sesi dihentikan")
-    status_label.configure(text="Sesi dihentikan lewat tombol darurat.")
+    evaluasi_sesi(darurat=True)
 
 
 def berhenti_darurat():
@@ -253,7 +289,7 @@ def berhenti_darurat():
 
     dialog = ctk.CTkToplevel(app)
     dialog.title("WOI NGAPAIN")
-    dialog.geometry("400x300")
+    dialog.geometry("400x320")
     dialog.attributes("-topmost", True)
     dialog.transient(app)
     dialog.after(150, dialog.grab_set)
@@ -262,15 +298,14 @@ def berhenti_darurat():
         dialog, text="PERINGATAN", font=("Arial", 22, "bold"), text_color="red"
     ).pack(pady=(20, 10))
 
-    ctk.CTkLabel(
-        dialog,
-        text=(
-            "TOMBOL INI HANYA UNTUK DARURAT\n"
-            "MENYERAH KAH??\n\n"
-            "KETIK STOP UNTUK BERHENTI BERKEMBANG"
-        ),
-        justify="center",
-    ).pack(pady=(0, 10), padx=20)
+    peringatan = "Tombol ini Untuk keadaan darurat kids\nMenyerah kah?? \n"
+    if PENALTI_SAAT_DARURAT:
+        peringatan += (
+            "Menghatikan sesi akan dihitung malas, GAGAL dan akan kena penalti\n"
+        )
+    peringatan += "\nKetik STOP, menyerah untuk berkembang."
+
+    ctk.CTkLabel(dialog, text=peringatan, justify="center").pack(pady=(0, 10), padx=20)
 
     konfirmasi = ctk.CTkEntry(dialog, justify="center", placeholder_text="STOP")
     konfirmasi.pack(pady=5)
