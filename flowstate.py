@@ -42,20 +42,41 @@ def format_waktu(total_detiks):
     return f"{menits:02d}:{detiks:02d}"
 
 
+def durasi_terjemah(text):
+    text = text.strip()
+    try:
+        if ":" in text:
+            menits_text, detiks_text = text.split(":")
+            menits = int(menits_text)
+            detiks = int(detiks_text)
+            if not 0 <= seconds < 60:
+                return None
+        else:
+            menits = int(text)
+            detiks = 0
+    except ValueError:
+        return None
+
+    total = menits * 60 + detiks
+    if menits < 0 or total <= 0:
+        return None
+    return total
+
+
 def mulai_waktu():
     global waktu_tersisa, waktu_berjalan
-    try:
-        menits = int(durasi_masuk.get())
-    except ValueError:
-        waktu_label.configure(text="Masukkan semua angka")
+    if waktu_berjalan:
         return
-    if menits <= 0:
-        waktu_label.configure(text="Waktu minimal 1")
+
+    total = durasi_terjemah(durasi_masuk.get())
+    if total is None:
+        waktu_label.configure(text="use MM:SS", font=("Arial", 28, "bold"))
         return
-    waktu_tersisa = menits * 60
+
+    waktu_tersisa = total
     waktu_berjalan = True
-    tombol_start.configure(state="disable")
-    durasi_masuk.configure(state="disable")
+    waktu_label.configure(font=("Arial", 36, "bold"))
+    tombol_start.configure(text="Fokus !. . .")
     tick()
 
 
