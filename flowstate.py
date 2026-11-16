@@ -376,7 +376,7 @@ def evaluasi_sesi(darurat=False):
         statistik["gagal"] += 1
         statistik["streak"] = 0
         penalti = True
-        pesan = f"Gagal: {selesai} / {total} tugas.Penalti {DURASI_PENALTI} detik."
+        pesan = f"Gagal: {selesai} / {total} tugas. Penalti {DURASI_PENALTI} detik."
 
     tugas[:] = [t for t in tugas if not t["done"]]
     update_tugas_list()
@@ -442,7 +442,7 @@ def berhenti_darurat():
     peringatan = "Tombol ini Untuk keadaan darurat kids\nMenyerah kah?? \n"
     if PENALTI_SAAT_DARURAT:
         peringatan += (
-            "Menghatikan sesi akan dihitung malas, GAGAL dan akan kena penalti\n"
+            "Menghentikan sesi akan dihitung malas, GAGAL dan akan kena penalti\n"
         )
     peringatan += "\nKetik STOP, menyerah untuk berkembang."
 
