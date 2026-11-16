@@ -175,7 +175,122 @@ def atur_mode(sesi):
     tugas_input.configure(state=status)
     tombol_tambah.configure(state=status)
     durasi_masuk.configure(state=status)
+    tombol_blocklist.configure(state=status)
+    if sesi and jendela_blocklist_hidup():
+        jendela_blocklist.destroy()
     tombol_start.configure(text="Fokus !. . ." if sesi else "Mulai")
+
+
+def bersihkan_website(text):
+    text = text.strip().lower()
+    for awalan in ("https://", "http://"):
+        if text.startswith(awalan):
+            text = text[len(awalan) :]
+    if text.startswith("www."):
+        text = text[4:]
+    text = text.split("/")[0]
+    return text
+
+
+def jendela_blocklist_hidup():
+    try:
+        return jendela_blocklist is not None and jendela_blocklist.winfo_exists()
+    except Exception:
+        return False
+
+
+def isi_daftar(jenis, frame):
+    for widget in frame.winfo_children():
+        widget.destroy()
+    for item in blocklist[jenis]:
+        baris = ctk.CTkFrame(frame, fg_color="transparent")
+        baris.pack(fill="x", padx=5, pady=2)
+        ctk.CTkLabel(baris, text=item, anchor="w").pack(
+            side="left", fill="x", expand=True
+        )
+        ctk.CTkButton(
+            baris,
+            text="Hapus",
+            width=60,
+            fg_color="#b00020",
+            hover_color="#800018",
+            command=lambda i=item: hapus_item(jenis, i, frame),
+        ).pack(side="right")
+
+
+def tambah_item(jenis, entry, pesan, frame):
+    if waktu_berjalan:
+        return
+    text = entry.get().strip().lower()
+    if jenis == "website":
+        text = bersihkan_website(text)
+        if "." not in text or " " in text:
+            pesan.configure(text="Contoh : youtube.com")
+            return
+    if text == "":
+        return
+    if text in blocklist[jenis]:
+        pesan.configure(text="Sudah ada di daftar.")
+        return
+    blocklist[jenis].append(text)
+    simpan_blocklist()
+    entry.delete(0, "end")
+    pesan.configure(text="")
+    isi_daftar(jenis, frame)
+
+
+def hapus_item(jenis, item, frame):
+    if waktu_berjalan:
+        return
+    if item in blocklist[jenis]:
+        blocklist[jenis].remove(item)
+        simpan_blocklist()
+    isi_daftar(jenis, frame)
+
+
+def buat_tab(tab, jenis, petunjuk):
+    baris_input = ctk.CTkFrame(tab, fg_color="transparent")
+    baris_input.pack(fill="x", pady=(5, 0))
+
+    entry = ctk.CTkEntry(baris_input, placeholder_text=petunjuk)
+    entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+    pesan = ctk.CTkLabel(tab, text="", text_color="orange")
+    pesan.pack(pady=(5, 0))
+
+    frame = ctk.CTkScrollableFrame(tab)
+    frame.pack(fill="both", expand=True, pady=10)
+
+    ctk.CTkButton(
+        baris_input,
+        text="Tambah",
+        width=80,
+        command=lambda: tambah_item(jenis, entry, pesan, frame),
+    ).pack(side="right")
+    entry.bind("<Return>", lambda event: tambah_item(jenis, entry, pesan, frame))
+    isi_daftar(jenis, frame)
+
+
+def buka_blocklist():
+    global jendela_blocklist
+    if waktu_berjalan:
+        return
+    if jendela_blocklist_hidup():
+        jendela_blocklist.focus()
+        return
+
+    jendela_blocklist = ctk.CTkToplevel(app)
+    jendela_blocklist.title("Blocklist")
+    jendela_blocklist.geometry("420x480")
+    jendela_blocklist.transient(app)
+
+    tabs = ctk.CTkTabview(jendela_blocklist)
+    tabs.pack(fill="both", expand=True, padx=15, pady=15)
+    tabs.add("Aplikasi")
+    tabs.add("Website")
+
+    buat_tab(tabs.tab("Aplikasi"), "aplikasi", "Nama aplikasi, mis. discord")
+    buat_tab(tabs.tab("Website"), "website", "Alamat web, mis. youtube.com")
 
 
 def tampil_pengingat():
@@ -378,7 +493,7 @@ def berhenti_darurat():
 
 app = ctk.CTk()
 app.title("FLOWSTATE")
-app.geometry("500x720")
+app.geometry("500x760")
 
 title = ctk.CTkLabel(app, text="Flowstate", font=("Arial", 28, "bold"))
 title.pack(pady=(20, 10))
@@ -427,6 +542,11 @@ penghitung.pack(pady=(0, 5))
 
 statistik_label = ctk.CTkLabel(app, text="", text_color="gray70")
 statistik_label.pack(pady=(0, 10))
+
+tombol_blocklist = ctk.CTkButton(
+    app, text="Blocklist", fg_color="#37474f", command=buka_blocklist
+)
+tombol_blocklist.pack(pady=(0, 10))
 
 tombol_darurat = ctk.CTkButton(
     app,
