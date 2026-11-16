@@ -16,6 +16,9 @@ MINIMUM_TUGAS = 1
 DURASI_PENALTI = 15
 PENALTI_SAAT_DARURAT = True
 FILE_STAT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "statistik.json")
+FILE_BLOCKLIST = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "blocklist.json"
+)
 
 # data
 tugas = []
@@ -24,6 +27,7 @@ waktu_total = 0
 waktu_berjalan = False
 tick_id = None
 penalti_id = None
+jendela_blocklist = None
 
 
 def load_statistik():
@@ -48,6 +52,30 @@ def simpan_statistik():
 
 
 statistik = load_statistik()
+
+
+def load_blocklist():
+    standar = {"aplikasi": [], "website": []}
+    try:
+        with open(FILE_BLOCKLIST, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for kunci in standar:
+            if isinstance(data.get(kunci), list):
+                standar[kunci] = data[kunci]
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        pass
+    return standar
+
+
+def simpan_blocklist():
+    try:
+        with open(FILE_BLOCKLIST, "w", encoding="utf-8") as f:
+            json.dump(blocklist, f, indent=2)
+    except OSError:
+        pass
+
+
+blocklist = load_blocklist()
 
 
 def update_statistik_label():
