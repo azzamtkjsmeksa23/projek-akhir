@@ -6,6 +6,7 @@ import sys
 import subprocess
 import shutil
 
+import psutil
 import customtkinter as ctk
 
 ctk.set_appearance_mode("dark")
@@ -15,10 +16,12 @@ INTERVAL_PENGINGAT = 10
 MINIMUM_TUGAS = 1
 DURASI_PENALTI = 15
 PENALTI_SAAT_DARURAT = True
+INTERVAL_BLOKIR = 2
 FILE_STAT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "statistik.json")
 FILE_BLOCKLIST = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "blocklist.json"
 )
+
 
 # data
 tugas = []
