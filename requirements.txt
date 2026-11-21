@@ -1,3 +1,2 @@
-customtkinter
-psutil
-plyer
+customtkinter>=5.2.2
+psutil>=5.9.8

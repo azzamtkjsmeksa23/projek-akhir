@@ -5,6 +5,7 @@ import time
 import sys
 import subprocess
 import shutil
+import re
 
 import psutil
 import customtkinter as ctk
@@ -21,6 +22,7 @@ FILE_STAT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "statistik.
 FILE_BLOCKLIST = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "blocklist.json"
 )
+HOSTS_HELPER = "/usr/local/sbin/flowstate-hosts"
 
 
 # data
@@ -30,6 +32,9 @@ waktu_total = 0
 waktu_berjalan = False
 tick_id = None
 penalti_id = None
+pemblokir_id = None
+hosts_keepalive_id = None
+website_hosts_active = False
 jendela_blocklist = None
 
 
@@ -62,9 +67,10 @@ def load_blocklist():
     try:
         with open(FILE_BLOCKLIST, "r", encoding="utf-8") as f:
             data = json.load(f)
-        for kunci in standar:
-            if isinstance(data.get(kunci), list):
-                standar[kunci] = data[kunci]
+        if isinstance(data, dict):
+            for kunci in standar:
+                if isinstance(data.get(kunci), list):
+                    standar[kunci] = [item for item in data[kunci] if isinstance(item, str)]
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         pass
     return standar
@@ -185,14 +191,166 @@ def atur_mode(sesi):
 
 
 def bersihkan_website(text):
+    """Ambil hostname dari URL atau domain yang dimasukkan pengguna."""
+    from urllib.parse import urlsplit
+
     text = text.strip().lower()
-    for awalan in ("https://", "http://"):
-        if text.startswith(awalan):
-            text = text[len(awalan) :]
-    if text.startswith("www."):
-        text = text[4:]
-    text = text.split("/")[0]
-    return text
+    if not text:
+        return ""
+    if "://" not in text:
+        text = "https://" + text
+    try:
+        hostname = urlsplit(text).hostname or ""
+    except ValueError:
+        return ""
+    hostname = hostname.rstrip(".").lower()
+    if hostname.startswith("www."):
+        hostname = hostname[4:]
+    # Hanya domain DNS biasa; jangan menerima path, spasi, atau alamat IP.
+    pola_domain = r"(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}"
+    if not re.fullmatch(pola_domain, hostname):
+        return ""
+    return hostname
+
+
+
+def nama_aplikasi_normal(text):
+    """Normalize executable names; matching below is exact, never substring."""
+    nama = os.path.basename((text or "").strip()).lower()
+    if nama.endswith(".exe"):
+        nama = nama[:-4]
+    return nama
+
+
+def cek_aplikasi_blokir():
+    """Terminate ONLY processes whose exact process/executable name is listed."""
+    if not waktu_berjalan:
+        return
+
+    daftar_blokir = {
+        nama_aplikasi_normal(item)
+        for item in blocklist["aplikasi"]
+        if item.strip()
+    }
+    daftar_blokir.discard("")
+    if not daftar_blokir:
+        return
+
+    for proses in psutil.process_iter(["pid", "name", "exe"]):
+        try:
+            if proses.info["pid"] == os.getpid():
+                continue
+
+            nama_proses = nama_aplikasi_normal(proses.info.get("name"))
+            nama_exe = nama_aplikasi_normal(proses.info.get("exe"))
+
+            # Exact set membership: "firefox" does NOT match "firefox-bin-extra".
+            if nama_proses not in daftar_blokir and nama_exe not in daftar_blokir:
+                continue
+
+            nama_tampil = proses.info.get("name") or nama_exe or "unknown"
+            proses.terminate()
+            try:
+                proses.wait(timeout=1.0)
+            except psutil.TimeoutExpired:
+                proses.kill()
+                proses.wait(timeout=1.0)
+            status_label.configure(text=f"Aplikasi di blocklist ditutup: {nama_tampil}")
+
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+
+def mulai_pemblokir():
+    """Check only listed application names every INTERVAL_BLOKIR seconds."""
+    global pemblokir_id
+    if not waktu_berjalan:
+        pemblokir_id = None
+        return
+    cek_aplikasi_blokir()
+    pemblokir_id = app.after(INTERVAL_BLOKIR * 1000, mulai_pemblokir)
+
+
+def hentikan_pemblokir():
+    global pemblokir_id
+    if pemblokir_id is not None:
+        try:
+            app.after_cancel(pemblokir_id)
+        except Exception:
+            pass
+        pemblokir_id = None
+
+
+def jalankan_hosts_helper(aksi, domains=None, butuh_prompt=False):
+    """Call the separately installed, root-owned helper for listed domains only."""
+    if not os.path.isfile(HOSTS_HELPER):
+        raise FileNotFoundError(
+            f"Helper tidak ditemukan: {HOSTS_HELPER}. Ikuti langkah instalasi helper."
+        )
+    perintah = ["sudo"]
+    if not butuh_prompt:
+        perintah.append("-n")
+    perintah.extend([HOSTS_HELPER, aksi])
+    if domains:
+        perintah.extend(domains)
+    subprocess.run(perintah, check=True, timeout=30)
+
+
+def keep_sudo_alive():
+    """Keep the user's sudo ticket fresh so cleanup can run when focus ends."""
+    global hosts_keepalive_id
+    if not website_hosts_active or not waktu_berjalan:
+        hosts_keepalive_id = None
+        return
+    try:
+        subprocess.run(["sudo", "-n", "-v"], check=True, timeout=5)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        status_label.configure(
+            text="Izin sudo habis. Jika website belum terbuka setelah sesi, jalankan perintah pemulihan."
+        )
+    hosts_keepalive_id = app.after(60_000, keep_sudo_alive)
+
+
+def mulai_blokir_website():
+    """Block only domains explicitly listed in blocklist.json / tab Website."""
+    global website_hosts_active, hosts_keepalive_id
+    domains = sorted({bersihkan_website(x) for x in blocklist["website"]})
+    domains = [domain for domain in domains if domain]
+    if not domains:
+        return
+    try:
+        # Ask for sudo once; app itself must NOT be run as root.
+        subprocess.run(["sudo", "-v"], check=True, timeout=60)
+        jalankan_hosts_helper("block", domains, butuh_prompt=False)
+        website_hosts_active = True
+        hosts_keepalive_id = app.after(60_000, keep_sudo_alive)
+        status_label.configure(text="Website di tab blocklist sedang diblokir.")
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as error:
+        website_hosts_active = False
+        status_label.configure(
+            text=f"Website tidak diblokir (izin/helper gagal). Blocker aplikasi tetap aktif. {error}"
+        )
+
+
+def hentikan_blokir_website():
+    """Remove only Flowstate's marked /etc/hosts entries."""
+    global website_hosts_active, hosts_keepalive_id
+    if hosts_keepalive_id is not None:
+        try:
+            app.after_cancel(hosts_keepalive_id)
+        except Exception:
+            pass
+        hosts_keepalive_id = None
+    if not website_hosts_active:
+        return
+    try:
+        jalankan_hosts_helper("unblock", butuh_prompt=False)
+        website_hosts_active = False
+        status_label.configure(text="Blockir website dinonaktifkan.")
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        status_label.configure(
+            text="Gagal membuka blokir otomatis. Jalankan: sudo /usr/local/sbin/flowstate-hosts unblock"
+        )
 
 
 def jendela_blocklist_hidup():
@@ -228,7 +386,7 @@ def tambah_item(jenis, entry, pesan, frame):
     if jenis == "website":
         text = bersihkan_website(text)
         if "." not in text or " " in text:
-            pesan.configure(text="Contoh : youtube.com")
+            pesan.configure(text="Masukkan domain valid, contoh: youtube.com")
             return
     if text == "":
         return
@@ -257,6 +415,15 @@ def buat_tab(tab, jenis, petunjuk):
 
     entry = ctk.CTkEntry(baris_input, placeholder_text=petunjuk)
     entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+
+    petunjuk_label = ctk.CTkLabel(
+        tab,
+        text=("Nama proses harus persis, contoh: firefox / discord" if jenis == "aplikasi"
+              else "Hanya domain yang ditambahkan yang diblokir, contoh: youtube.com"),
+        text_color="gray65",
+        wraplength=360,
+    )
+    petunjuk_label.pack(pady=(4, 0))
 
     pesan = ctk.CTkLabel(tab, text="", text_color="orange")
     pesan.pack(pady=(5, 0))
@@ -338,6 +505,8 @@ def mulai_waktu():
     waktu_total = total
     waktu_berjalan = True
     atur_mode(True)
+    mulai_blokir_website()
+    mulai_pemblokir()
     tick()
 
 
@@ -394,6 +563,8 @@ def evaluasi_sesi(darurat=False):
 def finish_waktu():
     global waktu_berjalan
     waktu_berjalan = False
+    hentikan_pemblokir()
+    hentikan_blokir_website()
     atur_mode(False)
     waktu_label.configure(text="Waktu Abis!!")
     evaluasi_sesi()
@@ -420,6 +591,8 @@ def hentikan_sesi():
     if not waktu_berjalan:
         return
     waktu_berjalan = False
+    hentikan_pemblokir()
+    hentikan_blokir_website()
     if tick_id is not None:
         app.after_cancel(tick_id)
     atur_mode(False)
@@ -494,9 +667,30 @@ def berhenti_darurat():
     cek_dialog()
 
 
+def tutup_aplikasi():
+    """Stop timers and remove Flowstate website rules before closing the GUI."""
+    global waktu_berjalan
+    waktu_berjalan = False
+    hentikan_pemblokir()
+    hentikan_blokir_website()
+    if tick_id is not None:
+        try:
+            app.after_cancel(tick_id)
+        except Exception:
+            pass
+    if penalti_id is not None:
+        try:
+            app.after_cancel(penalti_id)
+        except Exception:
+            pass
+    app.destroy()
+
+
 app = ctk.CTk()
 app.title("FLOWSTATE")
-app.geometry("500x760")
+app.geometry("520x790")
+app.minsize(480, 650)
+app.protocol("WM_DELETE_WINDOW", tutup_aplikasi)
 
 title = ctk.CTkLabel(app, text="Flowstate", font=("Arial", 28, "bold"))
 title.pack(pady=(20, 10))
